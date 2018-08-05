@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Герои марвел</title>
+</head>
+<body>
+    <form method="get" action="{{ url('get_hero') }}" enctype="multipart/form-data">
+        <p><label>Имя героя</label></p>
+        <input name="name" type="text" value="" autofocus/>
+        <p><input type="submit"></p>
+    </form>
+
+</body>
+</html>
