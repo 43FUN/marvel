@@ -12,7 +12,9 @@ async def base_request_to_marvel(path, params):
     apikey = setting.MARVEL_API_CONF.get('public_key')
     other_params = '&'.join([f'{k}={v}' for k, v in params.items()])
     uri = f'{path}ts={ts}&apikey={apikey}&hash={marvel_hash}&{other_params}'
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(verify_ssl=False)
+    ) as session:
         async with session.get(uri) as resp:
             return await resp.json()
 
@@ -32,7 +34,7 @@ async def get_comics_by_hero_id(hero_id):
         path=setting.MARVEL_API_CONF.get('comics_uri').format(hero_id),
         params={
             'limit': 12,
-            'orderBy': 'onsaleDate',
+            'orderBy': '-onsaleDate',
         }
     )
 
@@ -42,6 +44,16 @@ async def get_events_by_hero_id(hero_id):
         path=setting.MARVEL_API_CONF.get('events_uri').format(hero_id),
         params={
             'limit': 12,
-            'orderBy': 'startDate',
+            'orderBy': '-startDate',
+        }
+    )
+
+
+async def get_comics_creators(comics_id):
+    return await base_request_to_marvel(
+        path=setting.MARVEL_API_CONF.get('creators_uri').format(comics_id),
+        params={
+            'limit': 1,
+            'orderBy': '-modified',
         }
     )

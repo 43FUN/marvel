@@ -46,6 +46,24 @@ class GenerateHeroInfo:
             })
         data['events'] = changed_events_list
 
+        creators_list = []
+        for comics in comics_list:
+            raw_creators = await marvel_api.get_comics_creators(comics['id'])
+            creators = raw_creators.get('data', {}).get('results', [])
+            if len(creators) > 0:
+                creators_list.append(creators[0])
+        changed_creator_list = []
+        for creator in creators_list:
+            changed_creator_list.append({
+                'id': creator.get('id'),
+                'fullName': creator.get('fullName'),
+                'resourceURI': creator.get('resourceURI'),
+                'modified': creator.get('modified'),
+                'thumbnail': creator.get('thumbnail'),
+                'urls': creator.get('urls'),
+            })
+        data['creators'] = changed_creator_list
+
         return data
 
     async def get_full_info(self):
