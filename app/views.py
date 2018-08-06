@@ -1,7 +1,7 @@
 import aiohttp_jinja2
 from aiohttp import web
 
-from app.services import GenerateHeroInfo
+from app.services import HeroDataCollector
 
 
 class IndexView(web.View):
@@ -16,5 +16,5 @@ class GetHeroView(web.View):
         name = self.request.query.get('name')
         if not isinstance(name, str):
             return web.HTTPBadRequest()
-        response = await GenerateHeroInfo(name).get_full_info()
+        response = await HeroDataCollector(name).collect_full()
         return web.json_response(response)

@@ -1,24 +1,24 @@
 from app import marvel_api
 
 
-class GenerateHeroInfo:
+class HeroDataCollector:
 
     def __init__(self, name):
         self.name = name
 
-    async def json_generate(self, hero):
-        data = {
-            'hero': {
-                'id': hero.get('id'),
-                'name': hero.get('name'),
-                'description': hero.get('description'),
-                'modified': hero.get('modified'),
-                'thumbnail': hero.get('thumbnail'),
-                'resourceURI': hero.get('resourceURI')
-            },
+    async def collect_hero_info(self):
+        hero = await marvel_api.fetch_hero_by_name(self.name)
+        return {
+            'id': hero.get('id'),
+            'name': hero.get('name'),
+            'description': hero.get('description'),
+            'modified': hero.get('modified'),
+            'thumbnail': hero.get('thumbnail'),
+            'resourceURI': hero.get('resourceURI')
         }
 
-        raw_comicses_info = await marvel_api.get_comics_by_hero_id(hero['id'])
+    async def collect_comics_info(self, hero_id):
+        raw_comicses_info = await marvel_api.fetch_comics_by_hero_id(hero_id)
         comics_list = raw_comicses_info.get('data', {}).get('results', [])
         changed_comics_list = []
         for comics in comics_list:
@@ -30,9 +30,10 @@ class GenerateHeroInfo:
                 'resourceURI': comics.get('resourceURI'),
                 'urls': comics.get('urls')
             })
-        data['comicses'] = changed_comics_list
+        return changed_comics_list
 
-        raw_events_info = await marvel_api.get_events_by_hero_id(hero['id'])
+    async def collect_events_info(self, hero_id):
+        raw_events_info = await marvel_api.fetch_events_by_hero_id(hero_id)
         events_list = raw_events_info.get('data', {}).get('results', [])
         changed_events_list = []
         for events in events_list:
@@ -44,11 +45,12 @@ class GenerateHeroInfo:
                 'resourceURI': events.get('resourceURI'),
                 'urls': events.get('urls'),
             })
-        data['events'] = changed_events_list
+        return changed_events_list
 
+    async def collect_creators_info(self, comics_list):
         creators_list = []
         for comics in comics_list:
-            raw_creators = await marvel_api.get_comics_creators(comics['id'])
+            raw_creators = await marvel_api.fetch_comics_creators(comics['id'])
             creators = raw_creators.get('data', {}).get('results', [])
             if len(creators) > 0:
                 creators_list.append(creators[0])
@@ -62,12 +64,19 @@ class GenerateHeroInfo:
                 'thumbnail': creator.get('thumbnail'),
                 'urls': creator.get('urls'),
             })
-        data['creators'] = changed_creator_list
+        return changed_creator_list
 
-        return data
-
-    async def get_full_info(self):
-        raw_hero_info = await marvel_api.get_hero_by_name(self.name)
-        hero_list = raw_hero_info.get('data', {}).get('results', [])
-        hero = hero_list[0] if hero_list else None
-        return await self.json_generate(hero) if hero else {}
+    async def collect_full(self):
+        hero = await self.collect_hero_info()
+        full_dict = {}
+        if hero:
+            comics = await self.collect_comics_info(hero['id'])
+            events = await self.collect_events_info(hero['id'])
+            creators = await self.collect_creators_info(comics)
+            full_dict.update({
+                'hero': hero,
+                'comics': comics,
+                'events': events,
+                'creators': creators,
+            })
+        return full_dict
