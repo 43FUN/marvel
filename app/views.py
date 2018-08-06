@@ -1,7 +1,7 @@
 import aiohttp_jinja2
 from aiohttp import web
 
-from app.services import generate_info
+from app.services import GenerateHeroInfo
 
 
 class IndexView(web.View):
@@ -14,5 +14,7 @@ class GetHeroView(web.View):
 
     async def get(self):
         name = self.request.query.get('name')
-        response = await generate_info(name)
+        if not isinstance(name, str):
+            return web.HTTPBadRequest()
+        response = await GenerateHeroInfo(name).get_full_info()
         return web.json_response(response)
