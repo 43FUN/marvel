@@ -18,8 +18,7 @@ class HeroDataCollector:
         }
 
     async def collect_comics_info(self, hero_id):
-        raw_comicses_info = await marvel_api.fetch_comics_by_hero_id(hero_id)
-        comics_list = raw_comicses_info.get('data', {}).get('results', [])
+        comics_list = await marvel_api.fetch_comics_by_hero_id(hero_id)
         changed_comics_list = []
         for comics in comics_list:
             changed_comics_list.append({
@@ -33,8 +32,7 @@ class HeroDataCollector:
         return changed_comics_list
 
     async def collect_events_info(self, hero_id):
-        raw_events_info = await marvel_api.fetch_events_by_hero_id(hero_id)
-        events_list = raw_events_info.get('data', {}).get('results', [])
+        events_list = await marvel_api.fetch_events_by_hero_id(hero_id)
         changed_events_list = []
         for events in events_list:
             changed_events_list.append({
@@ -50,8 +48,7 @@ class HeroDataCollector:
     async def collect_creators_info(self, comics_list):
         creators_list = []
         for comics in comics_list:
-            raw_creators = await marvel_api.fetch_comics_creators(comics['id'])
-            creators = raw_creators.get('data', {}).get('results', [])
+            creators = await marvel_api.fetch_comics_creators(comics['id'])
             if len(creators) > 0:
                 creators_list.append(creators[0])
         changed_creator_list = []

@@ -1,9 +1,17 @@
 import datetime
+import hashlib
 
 import aiohttp
 
 from app import setting
-from app.utils import get_hash
+
+
+def get_hash():
+    return str(hashlib.md5('{ts}{private_key}{public_key}'.format(
+        ts=datetime.datetime.now().strftime('%Y%m%d%H%M%S'),
+        private_key=setting.MARVEL_API_CONF.get('private_key'),
+        public_key=setting.MARVEL_API_CONF.get('public_key'),
+    ).encode('utf-8')).hexdigest())
 
 
 async def make_request_to_marvel(path, params):
@@ -22,11 +30,11 @@ async def make_request_to_marvel(path, params):
             return await resp.json()
 
 
-async def fetch_hero_by_name(name):
+async def fetch_hero_by_name(name, limit=1):
     raw_hero_info = await make_request_to_marvel(
         path='public/characters?',
         params={
-            'limit': 1,
+            'limit': limit,
             'name': name
         }
     )
@@ -35,31 +43,34 @@ async def fetch_hero_by_name(name):
     return hero
 
 
-async def fetch_comics_by_hero_id(hero_id):
-    return await make_request_to_marvel(
+async def fetch_comics_by_hero_id(hero_id, limit=12, order_by='-onsaleDate'):
+    raw_data = await make_request_to_marvel(
         path=f'public/characters/{hero_id}/comics?',
         params={
-            'limit': 12,
-            'orderBy': '-onsaleDate',
+            'limit': limit,
+            'orderBy': order_by,
         }
     )
+    return raw_data.get('data', {}).get('results', [])
 
 
-async def fetch_events_by_hero_id(hero_id):
-    return await make_request_to_marvel(
+async def fetch_events_by_hero_id(hero_id, limit=12, order_by='-startDate'):
+    raw_data = await make_request_to_marvel(
         path=f'public/characters/{hero_id}/events?',
         params={
-            'limit': 12,
-            'orderBy': '-startDate',
+            'limit': limit,
+            'orderBy': order_by,
         }
     )
+    return raw_data.get('data', {}).get('results', [])
 
 
-async def fetch_comics_creators(comics_id):
-    return await make_request_to_marvel(
+async def fetch_comics_creators(comics_id, limit=1, order_by='-modified'):
+    raw_data = await make_request_to_marvel(
         path=f'public/comics/{comics_id}/creators?',
         params={
-            'limit': 1,
-            'orderBy': '-modified',
+            'limit': limit,
+            'orderBy': order_by,
         }
     )
+    return raw_data.get('data', {}).get('results', [])
