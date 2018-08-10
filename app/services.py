@@ -15,7 +15,7 @@ class HeroDataCollector:
             'modified': hero.get('modified'),
             'thumbnail': hero.get('thumbnail'),
             'resourceURI': hero.get('resourceURI')
-        }
+        } if hero else None
 
     async def collect_comics_info(self, hero_id):
         comics_list = await marvel_api.fetch_comics_by_hero_id(hero_id)
