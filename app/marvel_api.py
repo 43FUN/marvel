@@ -2,6 +2,7 @@ import datetime
 import hashlib
 
 import aiohttp
+from asyncio import TimeoutError
 
 from app import setting
 
@@ -20,14 +21,20 @@ async def make_request_to_marvel(path, params):
     apikey = setting.MARVEL_API_CONF.get('public_key')
     host = setting.MARVEL_API_CONF.get('host')
     version = setting.MARVEL_API_CONF.get('version')
+    connector = aiohttp.TCPConnector(verify_ssl=False)
     other_params = '&'.join([f'{k}={v}' for k, v in params.items()])
     uri = f'{host}{version}{path}ts={ts}&apikey={apikey}' \
           f'&hash={marvel_hash}&{other_params}'
-    async with aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(verify_ssl=False)
-    ) as session:
-        async with session.get(uri) as resp:
-            return await resp.json()
+    async with aiohttp.ClientSession(connector=connector) as session:
+        try:
+            async with session.get(uri, timeout=30) as resp:
+                is_correct_response = all((
+                    resp.status == 200,
+                    resp.content_type == 'application/json',
+                ))
+                return await resp.json() if is_correct_response else {}
+        except TimeoutError:
+            return {}
 
 
 async def fetch_hero_by_name(name, limit=1):
